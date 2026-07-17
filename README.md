@@ -1,4 +1,4 @@
-# Dockhand
+# mcpdockery
 
 An [MCP](https://modelcontextprotocol.io/) server that gives an LLM (Claude, etc.) direct control over your local Docker daemon — run and manage containers, images, volumes, networks, and Compose stacks through natural language.
 
@@ -15,7 +15,7 @@ Built with [FastMCP](https://github.com/modelcontextprotocol/python-sdk) and the
 
 ```bash
 git clone <this-repo>
-cd dockhand
+cd mcpdockery
 uv sync
 ```
 
@@ -36,9 +36,9 @@ Add an entry to your MCP client's configuration (e.g. `claude_desktop_config.jso
 ```json
 {
   "mcpServers": {
-    "dockhand": {
+    "mcpdockery": {
       "command": "uv",
-      "args": ["--directory", "/absolute/path/to/dockhand", "run", "main.py"]
+      "args": ["--directory", "/absolute/path/to/mcpdockery", "run", "main.py"]
     }
   }
 }
