@@ -113,11 +113,18 @@ Replace `/absolute/path/to/mcpdockery` with the actual path where you cloned the
 | `list_networks` | Lists networks with driver and scope |
 | `create_network` | Creates a new network |
 
+### Diagnostics (`diagnostics.py`)
+
+| Tool | Description |
+|---|---|
+| `docker_doctor` | Scans all containers and reports only the ones needing attention: OOM kills, restart loops, unhealthy checks, crashes, high CPU/memory |
+
 ### Security (`security.py`)
 
 | Tool | Description |
 |---|---|
 | `scan_image` | Scans an image for known vulnerabilities using Trivy; defaults to CRITICAL/HIGH severity only |
+| `scan_dockerfile` | Scans a Dockerfile for misconfigurations (root user, `latest` tag, hardcoded secrets, missing HEALTHCHECK, etc.) before it's even built |
 
 ### Compose stacks (`stacks.py`)
 
@@ -140,10 +147,12 @@ Once connected, you can drive the server with natural-language requests. A few e
 | "Run an nginx container on port 8080" | `run_container` |
 | "Show me the logs for my-app from the last hour" | `container_logs` |
 | "What's using all the CPU right now?" | `list_containers`, `container_stats` |
+| "Is anything broken right now?" | `docker_doctor` |
 | "Deploy this docker-compose file as 'staging'" | `deploy_stack` |
 | "Push my-app:latest to my ECR repo" | `push_image` |
 | "Clean up the my-app container and its image" | `delete_container`, `delete_image` |
 | "Scan my-app:latest for vulnerabilities" | `scan_image` |
+| "Check my Dockerfile for security issues before I build it" | `scan_dockerfile` |
 
 The model chooses which tool(s) to call based on your request — you don't need to name the tool yourself.
 
@@ -162,6 +171,7 @@ src/
   networks.py         # Network tools
   stacks.py           # Compose stack tools
   security.py         # Image vulnerability scanning tools
+  diagnostics.py      # Cross-container health triage tools
 ```
 
 ## Safety notes

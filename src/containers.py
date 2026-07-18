@@ -1,5 +1,6 @@
 from server import mcp
 from docker_client import get_client
+from helper import _container_usage
 
 
 @mcp.tool()
@@ -139,18 +140,7 @@ def container_stats(container_name: str) -> str:
     try:
         client = get_client()
         container = client.containers.get(container_name)
-        stats = container.stats(stream=False)
-
-        cpu_delta = stats["cpu_stats"]["cpu_usage"]["total_usage"] - stats["precpu_stats"]["cpu_usage"]["total_usage"]
-        system_delta = stats["cpu_stats"]["system_cpu_usage"] - stats["precpu_stats"]["system_cpu_usage"]
-        num_cpus = stats["cpu_stats"].get("online_cpus", 1)
-        cpu_percent = 0.0
-        if system_delta > 0 and cpu_delta > 0:
-            cpu_percent = (cpu_delta / system_delta) * num_cpus * 100.0
-
-        mem_usage = stats["memory_stats"].get("usage", 0) / (1024 * 1024)
-        mem_limit = stats["memory_stats"].get("limit", 0) / (1024 * 1024)
-
+        cpu_percent, mem_usage, mem_limit = _container_usage(container.stats(stream=False))
         return f"{container_name}: CPU {cpu_percent:.2f}% | Memory {mem_usage:.1f}MB / {mem_limit:.1f}MB"
     except Exception as e:
         return f"Failed to get stats for container {container_name}: {e}"
