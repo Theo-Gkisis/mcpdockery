@@ -37,18 +37,16 @@ def remove_volume(volume_name: str) -> str:
 
 
 @mcp.tool()
-def list_networks() -> str:
+def create_volume(volume_name: str, driver: str = "local") -> str:
     """
-    Lists all Docker networks with their driver and scope
+    Creates a new Docker volume.
+    Args:
+        volume_name: name to give the new volume
+        driver: volume driver to use (default "local")
     """
     try:
         client = get_client()
-        networks = client.networks.list()
-        if not networks:
-            return "No networks found"
-        lines = []
-        for n in networks:
-            lines.append(f"{n.short_id} {n.name} {n.attrs.get('Driver')} {n.attrs.get('Scope')}")
-        return "\n".join(lines)
+        volume = client.volumes.create(name=volume_name, driver=driver)
+        return f"Created volume {volume.name} (driver: {volume.attrs.get('Driver')})"
     except Exception as e:
-        return f"Failed to list networks: {e}"
+        return f"Failed to create volume {volume_name}: {e}"

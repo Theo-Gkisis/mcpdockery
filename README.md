@@ -23,6 +23,7 @@ Built with [FastMCP](https://github.com/modelcontextprotocol/python-sdk) and the
 | [Python](https://www.python.org/) >= 3.14 | Interpreter version pinned in `.python-version` |
 | [Docker](https://www.docker.com/) | Docker Desktop or Docker Engine, running locally |
 | Docker Compose v2 CLI | `docker compose` must be available on `PATH` — required for the stack/compose tools |
+| [Trivy](https://trivy.dev/) | `trivy` must be available on `PATH` — required for the `scan_image` tool |
 | [uv](https://docs.astral.sh/uv/) | Used for dependency management and running the server |
 
 For pulling from or pushing to a private registry (Docker Hub, AWS ECR, GCR, etc.), authenticate with that registry beforehand using your normal `docker login` flow — this server never accepts or stores credentials itself.
@@ -48,7 +49,7 @@ For pulling from or pushing to a private registry (Docker Hub, AWS ECR, GCR, etc
 ## Running the server
 
 ```bash
-uv run main.py
+uv run src/main.py
 ```
 
 The server communicates over stdio, so it's meant to be launched by an MCP client rather than run standalone in a terminal.
@@ -62,7 +63,7 @@ Add an entry to your MCP client's configuration (e.g. `claude_desktop_config.jso
   "mcpServers": {
     "mcpdockery": {
       "command": "uv",
-      "args": ["--directory", "/absolute/path/to/mcpdockery", "run", "main.py"]
+      "args": ["--directory", "/absolute/path/to/mcpdockery", "run", "src/main.py"]
     }
   }
 }
@@ -97,13 +98,26 @@ Replace `/absolute/path/to/mcpdockery` with the actual path where you cloned the
 | `push_image` | Tags and pushes a local image to a registry (requires prior `docker login`) |
 | `delete_image` | Force-removes a local image |
 
-### Volumes & networks (`volumes.py`)
+### Volumes (`volumes.py`)
 
 | Tool | Description |
 |---|---|
 | `list_volumes` | Lists volumes with driver and mountpoint |
+| `create_volume` | Creates a new volume |
 | `remove_volume` | Deletes a volume (fails if still in use) |
+
+### Networks (`networks.py`)
+
+| Tool | Description |
+|---|---|
 | `list_networks` | Lists networks with driver and scope |
+| `create_network` | Creates a new network |
+
+### Security (`security.py`)
+
+| Tool | Description |
+|---|---|
+| `scan_image` | Scans an image for known vulnerabilities using Trivy; defaults to CRITICAL/HIGH severity only |
 
 ### Compose stacks (`stacks.py`)
 
@@ -129,21 +143,25 @@ Once connected, you can drive the server with natural-language requests. A few e
 | "Deploy this docker-compose file as 'staging'" | `deploy_stack` |
 | "Push my-app:latest to my ECR repo" | `push_image` |
 | "Clean up the my-app container and its image" | `delete_container`, `delete_image` |
+| "Scan my-app:latest for vulnerabilities" | `scan_image` |
 
 The model chooses which tool(s) to call based on your request — you don't need to name the tool yourself.
 
 ## Project structure
 
 ```
-main.py             # Entrypoint: registers tool modules and starts the MCP server
-server.py            # Shared FastMCP server instance
-docker_client.py     # Lazy singleton Docker SDK client
-compose_client.py    # Thin wrapper around the `docker compose` CLI
-helper.py            # Shared helpers (path normalization, image tag parsing)
-containers.py        # Container lifecycle & inspection tools
-images.py            # Image pull/build/push/list/delete tools
-volumes.py           # Volume & network tools
-stacks.py            # Compose stack tools
+src/
+  main.py             # Entrypoint: registers tool modules and starts the MCP server
+  server.py           # Shared FastMCP server instance
+  docker_client.py    # Lazy singleton Docker SDK client
+  compose_client.py   # Thin wrapper around the `docker compose` CLI
+  helper.py           # Shared helpers (path normalization, image tag parsing, Trivy wrapper)
+  containers.py       # Container lifecycle & inspection tools
+  images.py           # Image pull/build/push/list/delete tools
+  volumes.py          # Volume tools
+  networks.py         # Network tools
+  stacks.py           # Compose stack tools
+  security.py         # Image vulnerability scanning tools
 ```
 
 ## Safety notes

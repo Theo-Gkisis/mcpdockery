@@ -1,4 +1,5 @@
 import re
+import subprocess
 
 
 def _normalize_path(path: str) -> str:
@@ -15,3 +16,14 @@ def _split_tag(image: str, default_tag: str) -> tuple[str, str]:
         repository, tag = image.rsplit(":", 1)
         return repository, tag
     return image, default_tag
+
+def run_trivy(*args:str) -> str:
+    result = subprocess.run(
+        ["trivy",*args],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if result.returncode != 0:
+        return f"Error: {result.stderr.strip()}"
+    return result.stdout.strip() or "Done."

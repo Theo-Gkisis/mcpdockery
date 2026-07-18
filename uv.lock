@@ -210,21 +210,6 @@ wheels = [
 ]
 
 [[package]]
-name = "docker-mcp"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "docker" },
-    { name = "mcp", extra = ["cli"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "docker", specifier = ">=7.1.0" },
-    { name = "mcp", extras = ["cli"], specifier = ">=1.28.1" },
-]
-
-[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -347,6 +332,21 @@ wheels = [
 cli = [
     { name = "python-dotenv" },
     { name = "typer" },
+]
+
+[[package]]
+name = "mcpdockery"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "docker" },
+    { name = "mcp", extra = ["cli"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "docker", specifier = ">=7.1.0" },
+    { name = "mcp", extras = ["cli"], specifier = ">=1.28.1" },
 ]
 
 [[package]]
