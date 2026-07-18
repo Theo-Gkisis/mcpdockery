@@ -113,6 +113,12 @@ Replace `/absolute/path/to/mcpdockery` with the actual path where you cloned the
 | `list_networks` | Lists networks with driver and scope |
 | `create_network` | Creates a new network |
 
+### Optimization (`optimization.py`)
+
+| Tool | Description |
+|---|---|
+| `analyze_multistage` | Detects whether a Dockerfile would benefit from a multi-stage build (build-tool commands in a single-stage image); returns reasoning + raw content for the model to draft the rewrite |
+
 ### Diagnostics (`diagnostics.py`)
 
 | Tool | Description |
@@ -153,6 +159,7 @@ Once connected, you can drive the server with natural-language requests. A few e
 | "Clean up the my-app container and its image" | `delete_container`, `delete_image` |
 | "Scan my-app:latest for vulnerabilities" | `scan_image` |
 | "Check my Dockerfile for security issues before I build it" | `scan_dockerfile` |
+| "Should this Dockerfile use multi-stage builds?" | `analyze_multistage` |
 
 The model chooses which tool(s) to call based on your request — you don't need to name the tool yourself.
 
@@ -170,8 +177,9 @@ src/
   volumes.py          # Volume tools
   networks.py         # Network tools
   stacks.py           # Compose stack tools
-  security.py         # Image vulnerability scanning tools
+  security.py         # Image/Dockerfile vulnerability & misconfiguration scanning tools
   diagnostics.py      # Cross-container health triage tools
+  optimization.py     # Dockerfile efficiency analysis tools
 ```
 
 ## Safety notes
