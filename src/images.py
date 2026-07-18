@@ -1,23 +1,15 @@
 from server import mcp
 from docker_client import get_client
+from helper import _split_tag , _normalize_path
 import os
-import shutil
-import tempfile
-import re
-
-def _normalize_path(path: str) -> str:
-    match = re.match(r"^/([a-zA-Z])/(.*)", path)
-    if match:
-        drive, rest = match.groups()
-        return f"{drive.upper()}:\\{rest.replace('/', '\\\\')}"
-    return path
-
 
 @mcp.tool()
 def list_images() -> str:
     """
-    List all Docker images
+    Lists all local Docker images, including untagged/intermediate ones.
+    Each line shows: short ID, tags, and size in MB.
     """
+
     client = get_client()
     try:
         images = client.images.list(all=True)
@@ -30,6 +22,44 @@ def list_images() -> str:
         return "\n".join(lines)
     except Exception as e:
         return f"Failed to list Docker images: {e}"
+
+
+@mcp.tool()
+def pull_image(image: str, tag: str = "alpine", platform: str | None = None) -> str:
+    """
+    Pulls a Docker image from a registry (Docker Hub, ECR, GCR, etc.) without
+    running it. Requires prior `docker login` if the registry needs auth —
+    this tool does not accept credentials.
+
+    Defaults to the "alpine" tag (smaller, faster to pull) when no tag is
+    specified. Only pass a different tag (e.g. "latest" or a specific
+    version) if the user explicitly asks for the full/standard image —
+    not every image publishes an "alpine" variant, in which case the pull
+    will fail and you should retry with "latest".
+
+    Args:
+        image: repository name, e.g. "nginx" or "myregistry.com:5000/my-app".
+               Can include a tag directly (e.g. "nginx:1.27"), in which case
+               the `tag` argument is ignored.
+        tag: tag to pull if not already included in `image` (default "alpine")
+        platform: optional, e.g. "linux/amd64" or "linux/arm64" — force a
+                  specific architecture on multi-arch images
+    """
+    repository, image_tag = _split_tag(image, tag)
+    client = get_client()
+    try:
+        errors = []
+        for chunk in client.api.pull(repository, tag=image_tag, platform=platform, stream=True, decode=True):
+            if "error" in chunk:
+                errors.append(chunk["error"])
+        if errors:
+            return f"Failed to pull {repository}:{image_tag}: {'; '.join(errors)}"
+
+        img = client.images.get(f"{repository}:{image_tag}")
+        size_mb = img.attrs["Size"] / (1024 * 1024)
+        return f"Pulled {repository}:{image_tag} ({img.short_id}, {size_mb:.1f}MB)"
+    except Exception as e:
+        return f"Failed to pull {repository}:{image_tag}: {e}"
 
 @mcp.tool()
 def delete_image(image_name:str) -> str:
