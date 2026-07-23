@@ -23,7 +23,8 @@ Built with [FastMCP](https://github.com/modelcontextprotocol/python-sdk) and the
 | [Python](https://www.python.org/) >= 3.14 | Interpreter version pinned in `.python-version` |
 | [Docker](https://www.docker.com/) | Docker Desktop or Docker Engine, running locally |
 | Docker Compose v2 CLI | `docker compose` must be available on `PATH` — required for the stack/compose tools |
-| [Trivy](https://trivy.dev/) | `trivy` must be available on `PATH` — required for the `scan_image` tool |
+| [Trivy](https://trivy.dev/) | `trivy` must be available on `PATH` — required for the `scan_image` and `scan_dockerfile` tools |
+| [Hadolint](https://github.com/hadolint/hadolint) | `hadolint` must be available on `PATH` — required for the `lint_dockerfile` tool |
 | [uv](https://docs.astral.sh/uv/) | Used for dependency management and running the server |
 
 For pulling from or pushing to a private registry (Docker Hub, AWS ECR, GCR, etc.), authenticate with that registry beforehand using your normal `docker login` flow — this server never accepts or stores credentials itself.
@@ -113,11 +114,26 @@ Replace `/absolute/path/to/mcpdockery` with the actual path where you cloned the
 | `list_networks` | Lists networks with driver and scope |
 | `create_network` | Creates a new network |
 
+### Optimization (`optimization.py`)
+
+| Tool | Description |
+|---|---|
+| `analyze_multistage` | Detects whether a Dockerfile would benefit from a multi-stage build (build-tool commands in a single-stage image); returns reasoning + raw content for the model to draft the rewrite |
+
+### Diagnostics (`diagnostics.py`)
+
+| Tool | Description |
+|---|---|
+| `docker_doctor` | Scans all containers and reports only the ones needing attention: OOM kills, restart loops, unhealthy checks, crashes, high CPU/memory |
+
 ### Security (`security.py`)
 
 | Tool | Description |
 |---|---|
 | `scan_image` | Scans an image for known vulnerabilities using Trivy; defaults to CRITICAL/HIGH severity only |
+| `scan_dockerfile` | Scans a Dockerfile for misconfigurations (root user, `latest` tag, hardcoded secrets, missing HEALTHCHECK, etc.) before it's even built |
+| `lint_dockerfile` | Lints a Dockerfile with Hadolint for best-practice/style issues (unpinned versions, `ADD` vs `COPY`, missing `--no-install-recommends`, etc.) |
+| `audit_dockerfile` | Combined report: `scan_dockerfile` + `lint_dockerfile` + raw file content, so the model can also draft a corrected Dockerfile — use for a general "check my Dockerfile" request |
 
 ### Compose stacks (`stacks.py`)
 
@@ -140,10 +156,15 @@ Once connected, you can drive the server with natural-language requests. A few e
 | "Run an nginx container on port 8080" | `run_container` |
 | "Show me the logs for my-app from the last hour" | `container_logs` |
 | "What's using all the CPU right now?" | `list_containers`, `container_stats` |
+| "Is anything broken right now?" | `docker_doctor` |
 | "Deploy this docker-compose file as 'staging'" | `deploy_stack` |
 | "Push my-app:latest to my ECR repo" | `push_image` |
 | "Clean up the my-app container and its image" | `delete_container`, `delete_image` |
 | "Scan my-app:latest for vulnerabilities" | `scan_image` |
+| "Check my Dockerfile for security issues before I build it" | `scan_dockerfile` |
+| "Lint my Dockerfile for best practices" | `lint_dockerfile` |
+| "Check/review my Dockerfile" | `audit_dockerfile` |
+| "Should this Dockerfile use multi-stage builds?" | `analyze_multistage` |
 
 The model chooses which tool(s) to call based on your request — you don't need to name the tool yourself.
 
@@ -161,7 +182,9 @@ src/
   volumes.py          # Volume tools
   networks.py         # Network tools
   stacks.py           # Compose stack tools
-  security.py         # Image vulnerability scanning tools
+  security.py         # Image/Dockerfile vulnerability & misconfiguration scanning tools
+  diagnostics.py      # Cross-container health triage tools
+  optimization.py     # Dockerfile efficiency analysis tools
 ```
 
 ## Safety notes
