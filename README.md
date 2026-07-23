@@ -23,7 +23,8 @@ Built with [FastMCP](https://github.com/modelcontextprotocol/python-sdk) and the
 | [Python](https://www.python.org/) >= 3.14 | Interpreter version pinned in `.python-version` |
 | [Docker](https://www.docker.com/) | Docker Desktop or Docker Engine, running locally |
 | Docker Compose v2 CLI | `docker compose` must be available on `PATH` — required for the stack/compose tools |
-| [Trivy](https://trivy.dev/) | `trivy` must be available on `PATH` — required for the `scan_image` tool |
+| [Trivy](https://trivy.dev/) | `trivy` must be available on `PATH` — required for the `scan_image` and `scan_dockerfile` tools |
+| [Hadolint](https://github.com/hadolint/hadolint) | `hadolint` must be available on `PATH` — required for the `lint_dockerfile` tool |
 | [uv](https://docs.astral.sh/uv/) | Used for dependency management and running the server |
 
 For pulling from or pushing to a private registry (Docker Hub, AWS ECR, GCR, etc.), authenticate with that registry beforehand using your normal `docker login` flow — this server never accepts or stores credentials itself.
@@ -131,6 +132,8 @@ Replace `/absolute/path/to/mcpdockery` with the actual path where you cloned the
 |---|---|
 | `scan_image` | Scans an image for known vulnerabilities using Trivy; defaults to CRITICAL/HIGH severity only |
 | `scan_dockerfile` | Scans a Dockerfile for misconfigurations (root user, `latest` tag, hardcoded secrets, missing HEALTHCHECK, etc.) before it's even built |
+| `lint_dockerfile` | Lints a Dockerfile with Hadolint for best-practice/style issues (unpinned versions, `ADD` vs `COPY`, missing `--no-install-recommends`, etc.) |
+| `audit_dockerfile` | Combined report: `scan_dockerfile` + `lint_dockerfile` + raw file content, so the model can also draft a corrected Dockerfile — use for a general "check my Dockerfile" request |
 
 ### Compose stacks (`stacks.py`)
 
@@ -159,6 +162,8 @@ Once connected, you can drive the server with natural-language requests. A few e
 | "Clean up the my-app container and its image" | `delete_container`, `delete_image` |
 | "Scan my-app:latest for vulnerabilities" | `scan_image` |
 | "Check my Dockerfile for security issues before I build it" | `scan_dockerfile` |
+| "Lint my Dockerfile for best practices" | `lint_dockerfile` |
+| "Check/review my Dockerfile" | `audit_dockerfile` |
 | "Should this Dockerfile use multi-stage builds?" | `analyze_multistage` |
 
 The model chooses which tool(s) to call based on your request — you don't need to name the tool yourself.
