@@ -125,12 +125,14 @@ Replace `/absolute/path/to/mcpdockery` with the actual path where you cloned the
 | Tool | Description |
 |---|---|
 | `docker_doctor` | Scans all containers and reports only the ones needing attention: OOM kills, restart loops, unhealthy checks, crashes, high CPU/memory |
+| `check_exposed_ports` | Flags running containers with sensitive ports (databases, admin panels, Docker daemon API) or any port bound to all network interfaces |
 
 ### Security (`security.py`)
 
 | Tool | Description |
 |---|---|
 | `scan_image` | Scans an image for known vulnerabilities using Trivy; defaults to CRITICAL/HIGH severity only |
+| `generate_sbom` | Generates a Software Bill of Materials (SBOM) for an image using Trivy, in CycloneDX or SPDX-JSON format |
 | `scan_dockerfile` | Scans a Dockerfile for misconfigurations (root user, `latest` tag, hardcoded secrets, missing HEALTHCHECK, etc.) before it's even built |
 | `lint_dockerfile` | Lints a Dockerfile with Hadolint for best-practice/style issues (unpinned versions, `ADD` vs `COPY`, missing `--no-install-recommends`, etc.) |
 | `audit_dockerfile` | Combined report: `scan_dockerfile` + `lint_dockerfile` + raw file content, so the model can also draft a corrected Dockerfile — use for a general "check my Dockerfile" request |
@@ -157,10 +159,12 @@ Once connected, you can drive the server with natural-language requests. A few e
 | "Show me the logs for my-app from the last hour" | `container_logs` |
 | "What's using all the CPU right now?" | `list_containers`, `container_stats` |
 | "Is anything broken right now?" | `docker_doctor` |
+| "Is anything exposed to the network that shouldn't be?" | `check_exposed_ports` |
 | "Deploy this docker-compose file as 'staging'" | `deploy_stack` |
 | "Push my-app:latest to my ECR repo" | `push_image` |
 | "Clean up the my-app container and its image" | `delete_container`, `delete_image` |
 | "Scan my-app:latest for vulnerabilities" | `scan_image` |
+| "Generate an SBOM for my-app:latest" | `generate_sbom` |
 | "Check my Dockerfile for security issues before I build it" | `scan_dockerfile` |
 | "Lint my Dockerfile for best practices" | `lint_dockerfile` |
 | "Check/review my Dockerfile" | `audit_dockerfile` |

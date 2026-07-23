@@ -16,7 +16,7 @@ def deploy_stack(project_name: str, compose_yaml: str) -> str:
     try:
         with os.fdopen(fd, "w") as f:
             f.write(compose_yaml)
-        return run_compose("-p", project_name, "-f", path, "up", "-d")
+        return run_compose("-p", project_name, "-f", path, "up", "-d", timeout=300)
     except Exception as e:
         return f"Failed to deploy stack {project_name}: {e}"
     finally:

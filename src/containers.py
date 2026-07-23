@@ -1,6 +1,6 @@
 from server import mcp
 from docker_client import get_client
-from helper import _container_usage
+from helper import _container_usage, _redact_env
 
 
 @mcp.tool()
@@ -149,7 +149,8 @@ def container_stats(container_name: str) -> str:
 def container_inspect(container_name: str) -> str:
     """
     Returns detailed information about a container: environment variables,
-    mounts, network IP, and health status.
+    mounts, network IP, and health status. Env var values that look like
+    secrets (PASSWORD, TOKEN, API_KEY, etc.) are redacted.
     Args:
         container_name: Docker Container name
     """
@@ -158,7 +159,7 @@ def container_inspect(container_name: str) -> str:
         container = client.containers.get(container_name)
         attrs = container.attrs
 
-        env_vars = attrs["Config"].get("Env", [])
+        env_vars = _redact_env(attrs["Config"].get("Env", []))
         mounts = attrs.get("Mounts", [])
         mount_lines = [f"{m['Source']} -> {m['Destination']} ({m.get('Mode', '')})" for m in mounts]
 

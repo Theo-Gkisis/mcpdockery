@@ -19,6 +19,24 @@ def scan_image(image: str, severity: str = "CRITICAL,HIGH") -> str:
     return run_trivy("image", "--severity", severity, "--format", "table", image)
 
 @mcp.tool()
+def generate_sbom(image: str, format: str = "cyclonedx") -> str:
+    """
+    Generates a Software Bill of Materials (SBOM) for a Docker image using
+    Trivy — a full inventory of every OS package and language dependency the
+    image contains. Useful for supply-chain compliance, license audits, and
+    tracking exposure when a new CVE is disclosed (search the SBOM instead of
+    re-scanning). Requires the `trivy` CLI installed and on PATH
+    (https://trivy.dev).
+
+    Args:
+        image: image to generate an SBOM for, e.g. "nginx:latest" or "my-app:v1"
+        format: SBOM format, "cyclonedx" (default) or "spdx-json"
+    """
+    if format not in ("cyclonedx", "spdx-json"):
+        return f"Unsupported format '{format}' — use 'cyclonedx' or 'spdx-json'"
+    return run_trivy("image", "--format", format, image)
+
+@mcp.tool()
 def scan_dockerfile(dockerfile_path: str, severity: str = "CRITICAL,HIGH") -> str:
     """
     Scans a Dockerfile for security misconfigurations using Trivy's config

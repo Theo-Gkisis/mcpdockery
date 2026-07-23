@@ -17,6 +17,27 @@ def _split_tag(image: str, default_tag: str) -> tuple[str, str]:
         return repository, tag
     return image, default_tag
 
+_SECRET_ENV_KEY = re.compile(
+    r"(SECRET|PASSWORD|PASSWD|PWD|TOKEN|API[_-]?KEY|PRIVATE[_-]?KEY|"
+    r"ACCESS[_-]?KEY|CREDENTIAL|AUTH|CONN(ECTION)?[_-]?STRING|DSN)",
+    re.IGNORECASE,
+)
+
+
+def _redact_env(env_vars: list[str]) -> list[str]:
+    """Masks values of env vars whose key looks secret-shaped (PASSWORD,
+    TOKEN, API_KEY, etc.) so they don't get echoed verbatim into the model's
+    context. Keys that don't match are returned unchanged."""
+    redacted = []
+    for entry in env_vars:
+        key, sep, value = entry.partition("=")
+        if sep and _SECRET_ENV_KEY.search(key):
+            redacted.append(f"{key}=***REDACTED***")
+        else:
+            redacted.append(entry)
+    return redacted
+
+
 def _container_usage(stats: dict) -> tuple[float, float, float]:
     """Returns (cpu_percent, mem_usage_mb, mem_limit_mb) from a Docker stats() dict."""
     cpu_delta = stats["cpu_stats"]["cpu_usage"]["total_usage"] - stats["precpu_stats"]["cpu_usage"]["total_usage"]
@@ -31,27 +52,35 @@ def _container_usage(stats: dict) -> tuple[float, float, float]:
     return cpu_percent, mem_usage_mb, mem_limit_mb
 
 
-def run_trivy(*args:str) -> str:
-    result = subprocess.run(
-        ["trivy",*args],
-        capture_output=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+def run_trivy(*args: str, timeout: int = 300) -> str:
+    try:
+        result = subprocess.run(
+            ["trivy", *args],
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        return f"Error: trivy timed out after {timeout}s"
     if result.returncode != 0:
         return f"Error: {result.stderr.strip()}"
     return result.stdout.strip() or "Done."
 
 
-def run_hadolint(*args: str) -> str:
+def run_hadolint(*args: str, timeout: int = 30) -> str:
     """Hadolint exits 1 when it finds lint issues, so a non-zero code isn't
     itself an error — only treat it as one if there's no stdout to show."""
-    result = subprocess.run(
-        ["hadolint", *args],
-        capture_output=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+    try:
+        result = subprocess.run(
+            ["hadolint", *args],
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        return f"Error: hadolint timed out after {timeout}s"
     if result.stdout.strip():
         return result.stdout.strip()
     if result.returncode != 0:
